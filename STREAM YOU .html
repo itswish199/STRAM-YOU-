@@ -1,0 +1,121 @@
+<meta name='viewport' content='width=device-width, initial-scale=1'/><!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Live Stream</title>
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      background-color: #f4f4f4;
+      font-family: Arial, sans-serif;
+      border: 5px solid darkred;
+      overflow-x: hidden;
+    }
+
+    .container {
+      text-align: center;
+      padding: 20px;
+    }
+
+    .video-container {
+      position: relative;
+      width: 100%;
+      max-width: 800px;
+      margin: 0 auto;
+      background-color: black;
+      border: 3px solid pink;
+      overflow: hidden;
+    }
+
+    iframe {
+      width: 100%;
+      height: 400px;
+      display: block;
+    }
+
+    .join-links {
+      margin-top: 20px;
+    }
+
+    .join-link {
+      display: inline-block;
+      margin: 10px;
+      padding: 10px 20px;
+      font-size: 16px;
+      font-weight: bold;
+      color: #ffffff;
+      background-color: #ff1493;
+      text-decoration: none;
+      border-radius: 5px;
+      text-transform: uppercase;
+    }
+
+    .join-link:hover {
+      background-color: #ff69b4;
+    }
+
+    h1 {
+      color: darkred;
+      font-size: 24px;
+    }
+
+    @media screen and (orientation: landscape) {
+      iframe {
+        height: 500px;
+      }
+    }
+  </style>
+  <script>
+    const links = [
+      "https://t.me/+-fEaxjBQTtM5MTY1",
+      "https://t.me/+-f6grb5TrtplNWZl"
+    ];
+
+    function getRandomLink() {
+      return links[Math.floor(Math.random() * links.length)];
+    }
+
+    function setJoinLinks() {
+      document.getElementById("join-link-1").href = getRandomLink();
+      document.getElementById("join-link-2").href = getRandomLink();
+    }
+
+    function enableFullscreen() {
+      const video = document.getElementById("video-frame");
+      if (video.requestFullscreen) {
+        video.requestFullscreen();
+      } else if (video.webkitRequestFullscreen) {
+        video.webkitRequestFullscreen();
+      } else if (video.msRequestFullscreen) {
+        video.msRequestFullscreen();
+      }
+    }
+  </script>
+</head>
+<body onload="setJoinLinks()">
+
+  <div class="container">
+    <h1>Stream You</h1>
+
+    <div class="video-container">
+      <iframe 
+        id="video-frame"
+        src="https://www.youtube.com/embed/3pjuqeXUsZ0"
+        frameborder="0"
+        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+        allowfullscreen>
+      </iframe>
+    </div>
+
+    <button onclick="enableFullscreen()" style="margin-top: 10px; padding: 10px 20px; background-color: #ff1493; color: white; border: none; font-weight: bold; cursor: pointer;">FULL SCREEN</button>
+
+    <div class="join-links">
+      <a id="join-link-1" class="join-link" href="#" target="_blank">JOIN TELEGRAM 1</a>
+      <a id="join-link-2" class="join-link" href="#" target="_blank">JOIN TELEGRAM 2</a>
+    </div>
+  </div>
+
+</body>
+</html>
