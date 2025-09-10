@@ -1,0 +1,11 @@
+:root{ --bg:#0f1724; --card:#0b1220; --muted:#a8b0bf; }
+*{box-sizing:border-box}
+body{font-family:Inter,system-ui,Arial, sans-serif; margin:0; background:linear-gradient(180deg,#021428,#031526); color:#e6eef8}
+.container{max-width:880px; margin:28px auto; padding:18px}
+header h1{margin:0 0 6px 0}
+.muted{color:var(--muted)}
+#player-wrap{background:#081622; padding:12px; border-radius:10px; box-shadow:0 6px 20px rgba(2,6,23,0.6)}
+video{width:100%; max-height:62vh; background:#000; border-radius:8px}
+.promo-list{display:flex; gap:8px; flex-wrap:wrap; margin-top:10px}
+.promo-btn{display:inline-block; padding:10px 14px; background:#0b6cff; color:#fff; border-radius:8px; text-decoration:none}
+footer{margin-top:12px; opacity:0.8}
