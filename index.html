@@ -5,6 +5,12 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Stream Room</title>
   <link rel="stylesheet" href="styles.css">
+  <style>
+    /* small override to center iframe when used */
+    .embed-wrap { width:100%; border-radius:8px; overflow:hidden; background:#000; }
+    .embed-iframe{ width:100%; height:56vh; border:0; display:block; }
+    .error-box{ padding:14px; background:#2b1111; color:#ffdede; border-radius:8px; margin-top:10px; }
+  </style>
 </head>
 <body>
   <main class="container">
@@ -14,7 +20,11 @@
     </header>
 
     <section id="player-wrap">
-      <video id="video" controls playsinline poster="assets/offline.jpg"></video>
+      <!-- placeholder area, JS will inject video or iframe -->
+      <div id="player-area">
+        <video id="video" controls playsinline poster="assets/offline.jpg" style="display:none;"></video>
+        <div id="embed" style="display:none;" class="embed-wrap"></div>
+      </div>
       <div id="player-msg" class="muted"></div>
     </section>
 
@@ -30,11 +40,7 @@
 
   <script src="https://cdn.jsdelivr.net/npm/hls.js@1.5.0/dist/hls.min.js"></script>
   <script>
-    // helper: get query param
-    function qp(name){
-      const u = new URL(location.href);
-      return u.searchParams.get(name);
-    }
+    function qp(name){ const u = new URL(location.href); return u.searchParams.get(name); }
 
     async function loadConfig(){
       try{
@@ -53,73 +59,70 @@
       if(cfg.access_token){
         const key = qp('k');
         if(key === cfg.access_token) return true;
-        // show simple client-side prompt (not secure) to accept token
         const entered = prompt('Enter access token: (ask owner)');
         if(entered === cfg.access_token){
-          // redirect to URL containing token param for convenience
           const u = new URL(location.href);
           u.searchParams.set('k', cfg.access_token);
           location.href = u.toString();
-          return false; // redirecting
+          return false;
         }
-        document.body.innerHTML = '<main class="container"><h2>Access denied</h2><p>Token missing or incorrect.</p></main>';
+        document.body.innerHTML = '<main class=\"container\"><h2>Access denied</h2><p>Token missing or incorrect.</p></main>';
         return false;
       }
       return true;
     }
 
-    function setupPlayer(streamUrl){
-      const video = document.getElementById('video');
-      const playerMsg = document.getElementById('player-msg');
+    function isYouTubeLink(url){
+      if(!url) return false;
+      return /youtube\.com\/watch|youtube\.com\/embed|youtu\.be\//i.test(url);
+    }
+    function extractYouTubeEmbed(url){
+      // returns embed URL (https://www.youtube.com/embed/VIDEO_ID)
+      try{
+        let m;
+        if((m = url.match(/youtu\.be\/([A-Za-z0-9_-]{6,})/))) return 'https://www.youtube.com/embed/'+m[1];
+        if((m = url.match(/[?&]v=([A-Za-z0-9_-]{6,})/))) return 'https://www.youtube.com/embed/'+m[1];
+        if((m = url.match(/youtube\.com\/embed\/([A-Za-z0-9_-]{6,})/))) return 'https://www.youtube.com/embed/'+m[1];
+      }catch(e){}
+      return null;
+    }
 
-      if(!streamUrl){
-        playerMsg.innerText = 'No stream_url set in config.json';
-        return;
-      }
+    function showError(msg){
+      const pa = document.getElementById('player-area');
+      document.getElementById('player-msg').innerHTML = '<div class="error-box">'+msg+'</div>';
+      console.warn(msg);
+    }
 
-      // m3u8 HLS
-      if(streamUrl.endsWith('.m3u8')){
-        if(Hls.isSupported()){
-          const hls = new Hls();
-          hls.loadSource(streamUrl);
-          hls.attachMedia(video);
-          hls.on(Hls.Events.ERROR, function(event, data){
-            console.error(data);
-            playerMsg.innerText = 'Player error: '+data.type+' - '+data.details;
-          });
-        }else if(video.canPlayType('application/vnd.apple.mpegurl')){
-          video.src = streamUrl;
-        }else{
-          playerMsg.innerText = 'HLS not supported in this browser.';
-        }
-      } else {
-        // assume direct mp4 or other browser-playable source
-        video.src = streamUrl;
-        video.addEventListener('error', ()=>{
-          playerMsg.innerText = 'Video load error. Check stream URL or CORS.';
+    function setupHLS(videoEl, url){
+      if(Hls.isSupported()){
+        const hls = new Hls();
+        hls.loadSource(url);
+        hls.attachMedia(videoEl);
+        hls.on(Hls.Events.ERROR, function(event, data){
+          console.error(data);
+          showError('Player error: '+data.type+' - '+data.details);
         });
+      } else if(videoEl.canPlayType('application/vnd.apple.mpegurl')){
+        videoEl.src = url;
+      } else {
+        showError('HLS not supported in this browser.');
       }
+    }
 
-      // basic health-check for stream (may be blocked by CORS)
-      (async ()=>{
-        try{
-          const res = await fetch(streamUrl, {method: 'HEAD'});
-          if(res.ok){
-            document.getElementById('status').innerText = 'Stream reachable';
-          } else {
-            document.getElementById('status').innerText = 'Stream fetch returned '+res.status;
-          }
-        }catch(err){
-          console.warn('Health check failed (likely CORS)', err);
-          document.getElementById('status').innerText = 'Stream health: unknown (CORS may block checks)';
-        }
-      })();
+    async function healthCheck(url){
+      try{
+        const res = await fetch(url, {method:'HEAD'});
+        if(res.ok) return 'Stream reachable';
+        return 'Stream fetch returned '+res.status;
+      }catch(e){
+        return 'Stream health: unknown (CORS may block checks)';
+      }
     }
 
     function renderPromos(promos){
       const wrap = document.getElementById('promo-list');
       wrap.innerHTML = '';
-      promos.slice(0,5).forEach(p => {
+      (promos||[]).slice(0,5).forEach(p => {
         const a = document.createElement('a');
         a.className = 'promo-btn';
         a.href = `redirect.html?id=${encodeURIComponent(p.id)}`;
@@ -133,14 +136,57 @@
     (async ()=>{
       const cfg = await loadConfig();
       document.getElementById('site-title').innerText = cfg.title || 'Stream Room';
-
-      // token check
       const ok = requireTokenCheck(cfg);
       if(!ok) return;
 
-      setupPlayer(cfg.stream_url);
-      renderPromos(cfg.promo_links || []);
+      const url = cfg.stream_url;
+      if(!url){
+        showError('No stream_url set in config.json');
+        return;
+      }
+
+      // Update status with health check (may be CORS-blocked)
+      document.getElementById('status').innerText = 'Checking stream...';
+      const health = await healthCheck(url);
+      document.getElementById('status').innerText = health;
+
+      const videoEl = document.getElementById('video');
+      const embedWrap = document.getElementById('embed');
+
+      // 1) YouTube -> iframe embed
+      if(isYouTubeLink(url)){
+        const embedUrl = extractYouTubeEmbed(url);
+        if(!embedUrl){
+          showError('YouTube link detected but could not extract video id.');
+        } else {
+          embedWrap.style.display = 'block';
+          embedWrap.innerHTML = `<iframe class="embed-iframe" src="${embedUrl}" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>`;
+        }
+        renderPromos(cfg.promo_links);
+        return;
+      }
+
+      // 2) .m3u8 -> HLS
+      if(url.toLowerCase().includes('.m3u8')){
+        videoEl.style.display = 'block';
+        setupHLS(videoEl, url);
+        renderPromos(cfg.promo_links);
+        return;
+      }
+
+      // 3) .mp4 -> native
+      if(url.toLowerCase().includes('.mp4') || url.match(/^https?:\/\/.*\.(mp4|webm|ogg)(\?|$)/i)){
+        videoEl.style.display = 'block';
+        videoEl.src = url;
+        videoEl.addEventListener('error', ()=>{ showError('Video load error. Check stream URL or CORS.'); });
+        renderPromos(cfg.promo_links);
+        return;
+      }
+
+      // 4) unknown -> friendly message
+      showError('Unsupported or protected stream. If you own this content, convert/host it as MP4 or HLS (see README).');
+      renderPromos(cfg.promo_links);
     })();
   </script>
 </body>
-</html>
+  </html>
