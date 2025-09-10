@@ -1,0 +1,44 @@
+<!doctype html>
+<html lang="hi">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Redirect</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <main class="container">
+    <h2>Redirecting...</h2>
+    <p id="msg" class="muted">Finding target...</p>
+    <p><a id="fallback" href="#">If you are not redirected, click here</a></p>
+  </main>
+
+  <script>
+    function qp(name){ const u = new URL(location.href); return u.searchParams.get(name); }
+    (async ()=>{
+      try{
+        const id = qp('id');
+        const r = await fetch('config.json', {cache: 'no-store'});
+        const cfg = await r.json();
+        const target = (cfg.promo_links||[]).find(x=>x.id==id)?.target;
+        const msg = document.getElementById('msg');
+        const fallback = document.getElementById('fallback');
+        if(!target){ msg.innerText = 'Target not found.'; return; }
+        fallback.href = target;
+        msg.innerText = 'Redirecting to: ' + target;
+        // local click counter (optional)
+        try{
+          const key = 'clicks_'+id;
+          const cnt = parseInt(localStorage.getItem(key)||'0')+1;
+          localStorage.setItem(key, cnt);
+        }catch(e){/*ignore*/}
+        // short delay to show message
+        setTimeout(()=>{ location.href = target; }, 1800);
+      }catch(e){
+        console.error(e);
+        document.getElementById('msg').innerText = 'Error reading redirect.';
+      }
+    })();
+  </script>
+</body>
+</html>
