@@ -1,32 +1,32 @@
 {
   "title": "My Stream Room",
-  "stream_url": "https://youtu.be/DVRCozkfAhg?si=AQsU036BQhINh63_",
+  "stream_url": "https://apps-s3-media.utkarshapp.com/file_library/videos/harvesting/2080231/utk-4/1712588361/index.m3u8",
   "access_token": "",
   "promo_links": [
     {
       "id": "1",
-      "label": "https://youtu.be/DVRCozkfAhg?si=AQsU036BQhINh63_",
-      "target": "https://youtu.be/DVRCozkfAhg?si=AQsU036BQhINh63_"
+      "label": "https://t.me/+MFAoq2X3C7VhNTJl",
+      "target": "https://t.me/+MFAoq2X3C7VhNTJl"
     },
     {
       "id": "2",
       "label": "Promo 2",
-      "target": "https://example.com/page2"
+      "target": "https://t.me/+MFAoq2X3C7VhNTJl"
     },
     {
       "id": "3",
       "label": "Promo 3",
-      "target": "https://example.com/page3"
+      "target": "https://t.me/+MFAoq2X3C7VhNTJl"
     },
     {
       "id": "4",
       "label": "Promo 4",
-      "target": "https://example.com/page4"
+      "target": "https://t.me/+MFAoq2X3C7VhNTJl"
     },
     {
       "id": "5",
       "label": "Promo 5",
-      "target": "https://example.com/page5"
+      "target": "https://t.me/+MFAoq2X3C7VhNTJl"
     }
   ]
 }
