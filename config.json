@@ -1,11 +1,11 @@
 {
   "title": "My Stream Room",
-  "stream_url": "https://example.com/live/stream.m3u8",
+  "stream_url": "https://youtu.be/DVRCozkfAhg?si=AQsU036BQhINh63_",
   "access_token": "",
   "promo_links": [
     {
       "id": "1",
-      "label": "Join Telegram",
+      "label": "https://youtu.be/DVRCozkfAhg?si=AQsU036BQhINh63_",
       "target": "https://t.me/YourChannel"
     },
     {
