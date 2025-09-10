@@ -1,0 +1,32 @@
+{
+  "title": "My Stream Room",
+  "stream_url": "https://example.com/live/stream.m3u8",
+  "access_token": "",
+  "promo_links": [
+    {
+      "id": "1",
+      "label": "Join Telegram",
+      "target": "https://t.me/YourChannel"
+    },
+    {
+      "id": "2",
+      "label": "Promo 2",
+      "target": "https://example.com/page2"
+    },
+    {
+      "id": "3",
+      "label": "Promo 3",
+      "target": "https://example.com/page3"
+    },
+    {
+      "id": "4",
+      "label": "Promo 4",
+      "target": "https://example.com/page4"
+    },
+    {
+      "id": "5",
+      "label": "Promo 5",
+      "target": "https://example.com/page5"
+    }
+  ]
+}
