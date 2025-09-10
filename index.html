@@ -1,0 +1,146 @@
+<!doctype html>
+<html lang="hi">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Stream Room</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <main class="container">
+    <header>
+      <h1 id="site-title">Stream Room</h1>
+      <p id="status" class="muted">Loading config...</p>
+    </header>
+
+    <section id="player-wrap">
+      <video id="video" controls playsinline poster="assets/offline.jpg"></video>
+      <div id="player-msg" class="muted"></div>
+    </section>
+
+    <section id="promo">
+      <h2>Promotional Links</h2>
+      <div id="promo-list" class="promo-list"></div>
+    </section>
+
+    <footer>
+      <small>Share only with friends. (This is a static public site — not fully private.)</small>
+    </footer>
+  </main>
+
+  <script src="https://cdn.jsdelivr.net/npm/hls.js@1.5.0/dist/hls.min.js"></script>
+  <script>
+    // helper: get query param
+    function qp(name){
+      const u = new URL(location.href);
+      return u.searchParams.get(name);
+    }
+
+    async function loadConfig(){
+      try{
+        const r = await fetch('config.json', {cache: 'no-store'});
+        if(!r.ok) throw new Error('config.json fetch failed: '+r.status);
+        return await r.json();
+      }catch(e){
+        console.error(e);
+        document.getElementById('status').innerText = 'Error loading config.json';
+        document.getElementById('player-msg').innerText = 'Config load failed. Check README.';
+        throw e;
+      }
+    }
+
+    function requireTokenCheck(cfg){
+      if(cfg.access_token){
+        const key = qp('k');
+        if(key === cfg.access_token) return true;
+        // show simple client-side prompt (not secure) to accept token
+        const entered = prompt('Enter access token: (ask owner)');
+        if(entered === cfg.access_token){
+          // redirect to URL containing token param for convenience
+          const u = new URL(location.href);
+          u.searchParams.set('k', cfg.access_token);
+          location.href = u.toString();
+          return false; // redirecting
+        }
+        document.body.innerHTML = '<main class="container"><h2>Access denied</h2><p>Token missing or incorrect.</p></main>';
+        return false;
+      }
+      return true;
+    }
+
+    function setupPlayer(streamUrl){
+      const video = document.getElementById('video');
+      const playerMsg = document.getElementById('player-msg');
+
+      if(!streamUrl){
+        playerMsg.innerText = 'No stream_url set in config.json';
+        return;
+      }
+
+      // m3u8 HLS
+      if(streamUrl.endsWith('.m3u8')){
+        if(Hls.isSupported()){
+          const hls = new Hls();
+          hls.loadSource(streamUrl);
+          hls.attachMedia(video);
+          hls.on(Hls.Events.ERROR, function(event, data){
+            console.error(data);
+            playerMsg.innerText = 'Player error: '+data.type+' - '+data.details;
+          });
+        }else if(video.canPlayType('application/vnd.apple.mpegurl')){
+          video.src = streamUrl;
+        }else{
+          playerMsg.innerText = 'HLS not supported in this browser.';
+        }
+      } else {
+        // assume direct mp4 or other browser-playable source
+        video.src = streamUrl;
+        video.addEventListener('error', ()=>{
+          playerMsg.innerText = 'Video load error. Check stream URL or CORS.';
+        });
+      }
+
+      // basic health-check for stream (may be blocked by CORS)
+      (async ()=>{
+        try{
+          const res = await fetch(streamUrl, {method: 'HEAD'});
+          if(res.ok){
+            document.getElementById('status').innerText = 'Stream reachable';
+          } else {
+            document.getElementById('status').innerText = 'Stream fetch returned '+res.status;
+          }
+        }catch(err){
+          console.warn('Health check failed (likely CORS)', err);
+          document.getElementById('status').innerText = 'Stream health: unknown (CORS may block checks)';
+        }
+      })();
+    }
+
+    function renderPromos(promos){
+      const wrap = document.getElementById('promo-list');
+      wrap.innerHTML = '';
+      promos.slice(0,5).forEach(p => {
+        const a = document.createElement('a');
+        a.className = 'promo-btn';
+        a.href = `redirect.html?id=${encodeURIComponent(p.id)}`;
+        a.innerText = p.label || p.target;
+        a.title = p.target;
+        a.target = '_blank';
+        wrap.appendChild(a);
+      });
+    }
+
+    (async ()=>{
+      const cfg = await loadConfig();
+      document.getElementById('site-title').innerText = cfg.title || 'Stream Room';
+
+      // token check
+      const ok = requireTokenCheck(cfg);
+      if(!ok) return;
+
+      setupPlayer(cfg.stream_url);
+      renderPromos(cfg.promo_links || []);
+    })();
+  </script>
+</body>
+</html>
